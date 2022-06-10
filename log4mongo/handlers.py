@@ -77,7 +77,7 @@ class MongoHandler(logging.Handler):
 
     def __init__(self, level=logging.NOTSET, host='localhost', port=27017,
                  database_name='logs', collection='logs',
-                 username=None, password=None, authentication_db='admin',
+                 username=None, password=None, 
                  fail_silently=False, formatter=None, capped=False,
                  capped_max=1000, capped_size=1000000, reuse=True, **kwargs):
         """
@@ -99,7 +99,6 @@ class MongoHandler(logging.Handler):
         self.collection_name = collection
         self.username = username
         self.password = password
-        self.authentication_database_name = authentication_db
         self.fail_silently = fail_silently
         self.connection = None
         self.db = None
@@ -118,8 +117,11 @@ class MongoHandler(logging.Handler):
         if self.reuse and _connection:
             self.connection = _connection
         else:
-            self.connection = MongoClient(host=self.host, port=self.port,
-                                          **kwargs)
+            self.connection = MongoClient(
+                host=self.host, port=self.port,
+                username=self.username, password=self.password,
+                **kwargs
+            )
             try:
                 self.connection.is_primary
             except ServerSelectionTimeoutError:
@@ -129,10 +131,6 @@ class MongoHandler(logging.Handler):
             _connection = self.connection
 
         self.db = self.connection[self.database_name]
-        if self.username is not None and self.password is not None:
-            auth_db = self.connection[self.authentication_database_name]
-            self.authenticated = auth_db.authenticate(self.username,
-                                                      self.password)
 
         if self.capped:
             #
